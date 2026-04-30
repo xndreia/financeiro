@@ -1,7 +1,7 @@
 {
-  "name": "minha-grana-backend",
+  "name": "meu financeiro-backend",
   "version": "1.0.0",
-  "description": "Backend local para o app Minha Grana com verificação de e-mail",
+  "description": "Backend local para o app Meu financeiro com verificação de e-mail",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
