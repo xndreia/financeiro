@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minha Grana - App</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="logo">Minha Grana</div>
+    <nav class="nav-links">
+      <a href="index.html">Início</a>
+      <a href="como-funciona.html">Como funciona</a>
+      <a href="recursos.html">Recursos</a>
+      <a class="ghost-btn" href="app.html">App</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="hero hero-small">
+      <div class="hero-copy">
+        <p class="eyebrow">App de finanças</p>
+        <h1>Controle suas despesas e receitas em um painel completo</h1>
+        <p class="intro">Registre cada movimentação, veja seu saldo atualizado e organize categorias com facilidade.</p>
+      </div>
+    </section>
+
+    <section class="card account-card">
+      <div id="account-info" class="account-info hidden">
+        <p class="eyebrow">Conta ativa</p>
+        <h2 id="account-name">Minha conta</h2>
+        <p class="balance-text">E-mail: <strong id="account-email-display">seu@email.com</strong></p>
+        <p class="balance-text">Saldo inicial: <strong id="initial-balance-display">R$ 0,00</strong></p>
+        <p class="balance-text">Agora você pode usar o app para registrar entradas e saídas.</p>
+      </div>
+
+      <div id="account-form-wrapper" class="account-form-wrapper">
+        <p class="eyebrow">Crie sua conta única</p>
+        <h2>Cadastro por e-mail</h2>
+        <form id="account-form">
+          <div class="form-group">
+            <label for="account-name-input">Nome da conta</label>
+            <input id="account-name-input" type="text" placeholder="Ex: Conta pessoal" required />
+          </div>
+          <div class="form-group">
+            <label for="account-email-input">E-mail</label>
+            <input id="account-email-input" type="email" placeholder="seu@email.com" required />
+          </div>
+          <div class="form-group password-field">
+            <label for="account-password-input">Senha</label>
+            <div class="password-input-wrapper">
+              <input id="account-password-input" type="password" placeholder="Crie uma senha" required />
+              <button type="button" class="password-toggle" data-target="account-password-input">Mostrar</button>
+            </div>
+          </div>
+          <div class="form-group password-field">
+            <label for="account-password-confirm-input">Confirmar senha</label>
+            <div class="password-input-wrapper">
+              <input id="account-password-confirm-input" type="password" placeholder="Repita a senha" required />
+              <button type="button" class="password-toggle" data-target="account-password-confirm-input">Mostrar</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="initial-balance-input">Saldo inicial</label>
+            <input id="initial-balance-input" type="number" step="0.01" placeholder="Ex: 1200" required />
+          </div>
+          <button type="submit" class="primary-btn">Criar conta</button>
+        </form>
+      </div>
+
+    </section>
+
+    <div id="app-content" class="hidden">
+      <section class="grid dashboard">
+      <article class="card balance-card">
+        <h2>Saldo atual</h2>
+        <div class="balance-amount" id="balance">R$ 0,00</div>
+        <p class="balance-text">O app soma automaticamente entradas e saídas e mostra seu saldo no momento.</p>
+      </article>
+
+      <article class="card summary-card">
+        <h2>Resumo</h2>
+        <div class="summary-values">
+          <div>
+            <span>Entradas</span>
+            <strong id="income-summary">R$ 0,00</strong>
+          </div>
+          <div>
+            <span>Saídas</span>
+            <strong id="expense-summary">R$ 0,00</strong>
+          </div>
+          <div>
+            <span>Economia</span>
+            <strong id="savings">R$ 0,00</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="card form-card">
+        <h2>Adicionar movimento</h2>
+        <form id="transaction-form">
+          <div class="form-group">
+            <label for="description">Descrição</label>
+            <input id="description" name="description" type="text" placeholder="Ex: aluguel, supermercado" required />
+          </div>
+          <div class="form-group">
+            <label for="amount">Valor</label>
+            <input id="amount" name="amount" type="number" step="0.01" placeholder="Ex: 1500,00" required />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="category">Categoria</label>
+              <select id="category" name="category">
+                <option value="Moradia">Moradia</option>
+                <option value="Alimentação">Alimentação</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Lazer">Lazer</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tipo</label>
+              <div class="radio-group">
+                <label><input type="radio" name="type" value="income" checked /> Entrada</label>
+                <label><input type="radio" name="type" value="expense" /> Saída</label>
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="primary-btn">Salvar</button>
+        </form>
+      </article>
+    </section>
+
+      <section class="card transactions-card">
+        <div class="section-header">
+          <div>
+            <h2>Movimentos</h2>
+            <p class="section-subtitle">Registre e acompanhe cada lançamento.</p>
+          </div>
+          <button id="clear-all" class="secondary-btn">Limpar tudo</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Valor</th>
+                <th>Tipo</th>
+                <th>Ação</th>
+              </tr>
+            </thead>
+            <tbody id="transaction-list"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <div id="edit-balloon" class="edit-balloon hidden">
+        <div class="edit-balloon-card">
+          <div class="edit-balloon-header">
+            <h3>Editar movimento</h3>
+            <button type="button" id="close-edit-balloon" class="icon-btn" aria-label="Fechar edição">×</button>
+          </div>
+          <form id="edit-transaction-form">
+            <div class="form-group">
+              <label for="edit-description">Descrição</label>
+              <input id="edit-description" name="edit-description" type="text" placeholder="Ex: aluguel, supermercado" required />
+            </div>
+            <div class="form-group">
+              <label for="edit-amount">Valor</label>
+              <input id="edit-amount" name="edit-amount" type="number" step="0.01" placeholder="Ex: 1500,00" required />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="edit-category">Categoria</label>
+                <select id="edit-category" name="edit-category">
+                  <option value="Moradia">Moradia</option>
+                  <option value="Alimentação">Alimentação</option>
+                  <option value="Transporte">Transporte</option>
+                  <option value="Lazer">Lazer</option>
+                  <option value="Outros">Outros</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tipo</label>
+                <div class="radio-group">
+                  <label><input type="radio" name="edit-type" value="income" /> Entrada</label>
+                  <label><input type="radio" name="edit-type" value="expense" /> Saída</label>
+                </div>
+              </div>
+            </div>
+            <div class="button-row">
+              <button type="submit" class="primary-btn">Salvar</button>
+              <button type="button" id="cancel-edit-balloon" class="secondary-btn">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
