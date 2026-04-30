@@ -11,7 +11,10 @@ const ACCOUNTS_FILE = path.join(DATA_DIR, 'accounts.json');
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));
+
+app.get("/", (req, res) => {
+  res.send("API rodando 🚀");
+});
 
 function hashPassword(password) {
   return crypto.createHash('sha256').update(password).digest('hex');
@@ -40,63 +43,77 @@ async function loadAccounts() {
 
 async function saveAccounts(accounts) {
   await ensureDataFolder();
-  await fs.writeFile(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2), 'utf-8');
+  await fs.writeFile(
+    ACCOUNTS_FILE,
+    JSON.stringify(accounts, null, 2),
+    'utf-8'
+  );
 }
 
-
 app.post('/api/register', async (req, res) => {
-  const { name, email, password, initialBalance } = req.body;
-  if (!name || !email || !password || typeof initialBalance !== 'number' || initialBalance < 0) {
-    return res.status(400).json({ success: false, message: 'Dados inválidos para cadastro.' });
+  try {
+    const { name, email, password, initialBalance } = req.body;
+
+    if (!name || !email || !password || typeof initialBalance !== 'number' || initialBalance < 0) {
+      return res.status(400).json({ success: false, message: 'Dados inválidos.' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const accounts = await loadAccounts();
+
+    if (accounts.find(a => a.email === normalizedEmail)) {
+      return res.status(400).json({ success: false, message: 'E-mail já cadastrado.' });
+    }
+
+    const newAccount = {
+      name: name.trim(),
+      email: normalizedEmail,
+      passwordHash: hashPassword(password),
+      initialBalance: Number(initialBalance),
+    };
+
+    accounts.push(newAccount);
+    await saveAccounts(accounts);
+
+    res.json({ success: true, message: 'Conta criada.' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Erro interno.' });
   }
-
-  const normalizedEmail = email.trim().toLowerCase();
-  const accounts = await loadAccounts();
-  if (accounts.find((account) => account.email === normalizedEmail)) {
-    return res.status(400).json({ success: false, message: 'E-mail já cadastrado.' });
-  }
-
-  const hashedPassword = hashPassword(password);
-  const account = {
-    name: name.trim(),
-    email: normalizedEmail,
-    passwordHash: hashedPassword,
-    initialBalance: Number(initialBalance).toFixed(2),
-  };
-
-  accounts.push(account);
-  await saveAccounts(accounts);
-
-  res.json({
-    success: true,
-    message: 'Conta registrada com sucesso.',
-    email: normalizedEmail,
-  });
 });
 
 app.get('/api/account', async (req, res) => {
-  const email = String(req.query.email || '').trim().toLowerCase();
-  if (!email) {
-    return res.status(400).json({ success: false, message: 'E-mail é obrigatório.' });
-  }
+  try {
+    const email = String(req.query.email || '').trim().toLowerCase();
 
-  const accounts = await loadAccounts();
-  const account = accounts.find((item) => item.email === email);
-  if (!account) {
-    return res.status(404).json({ success: false, message: 'Conta não encontrada.' });
-  }
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'E-mail obrigatório.' });
+    }
 
-  res.json({
-    success: true,
-    account: {
-      name: account.name,
-      email: account.email,
-      initialBalance: account.initialBalance,
-      verified: true,
-    },
-  });
+    const accounts = await loadAccounts();
+    const account = accounts.find(a => a.email === email);
+
+    if (!account) {
+      return res.status(404).json({ success: false, message: 'Conta não encontrada.' });
+    }
+
+    res.json({
+      success: true,
+      account: {
+        name: account.name,
+        email: account.email,
+        initialBalance: account.initialBalance,
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Erro interno.' });
+  }
 });
 
+// 👉 START
 app.listen(PORT, () => {
-  console.log(`Servidor iniciado em http://localhost:${PORT}`);
+  console.log(`Servidor rodando na porta ${PORT}`);
 });
