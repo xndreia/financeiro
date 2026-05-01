@@ -125,6 +125,56 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'E-mail e senha são obrigatórios.'
+      });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const accounts = await loadAccounts();
+    const account = accounts.find(
+      item => item.email === normalizedEmail
+    );
+
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        message: 'Conta não encontrada.'
+      });
+    }
+
+    if (account.passwordHash !== hashPassword(password)) {
+      return res.status(401).json({
+        success: false,
+        message: 'Senha incorreta.'
+      });
+    }
+
+    return res.json({
+      success: true,
+      account: {
+        name: account.name,
+        email: account.email,
+        initialBalance: account.initialBalance
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Erro interno.'
+    });
+  }
+});
+
 app.get('/api/account', async (req, res) => {
   try {
     const email = String(
