@@ -76,6 +76,19 @@
       <article class="card balance-card">
         <h2>Saldo atual</h2>
         <div class="balance-amount" id="balance">R$ 0,00</div>
+        <div class="balance-actions">
+          <button type="button" id="edit-balance-button" class="secondary-btn">Editar saldo</button>
+        </div>
+        <form id="balance-form" class="hidden">
+          <div class="form-group">
+            <label for="balance-input">Novo saldo atual</label>
+            <input id="balance-input" type="number" step="0.01" placeholder="Ex: 1500,00" />
+          </div>
+          <div class="button-row">
+            <button type="submit" class="primary-btn">Salvar saldo</button>
+            <button type="button" id="cancel-balance-edit" class="secondary-btn">Cancelar</button>
+          </div>
+        </form>
         <p class="balance-text">O app soma automaticamente entradas e saídas e mostra seu saldo no momento.</p>
       </article>
 
