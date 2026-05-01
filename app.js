@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'meu financeiro-transacoes';
-const ACCOUNT_KEY = 'meu-financeiro-conta';
+const STORAGE_KEY = 'minha-grana-transacoes';
+const ACCOUNT_KEY = 'minha-grana-conta';
 
 const API_URL = 'https://financeiro-xkxw.onrender.com';
 
@@ -12,61 +12,31 @@ const expenseSummaryCardDisplay = document.getElementById('expense-summary-card'
 const balanceDisplay = document.getElementById('balance');
 const savingsDisplay = document.getElementById('savings');
 const clearAllButton = document.getElementById('clear-all');
-const editBalloon = document.getElementById('edit-balloon');
-const editTransactionForm = document.getElementById('edit-transaction-form');
-const editDescriptionInput = document.getElementById('edit-description');
-const editAmountInput = document.getElementById('edit-amount');
-const editCategoryInput = document.getElementById('edit-category');
-const editTypeInputs = document.querySelectorAll('input[name="edit-type"]');
-const closeEditBalloonButton = document.getElementById('close-edit-balloon');
-const cancelEditBalloonButton = document.getElementById('cancel-edit-balloon');
 
 const accountInfoSection = document.getElementById('account-info');
 const accountFormWrapper = document.getElementById('account-form-wrapper');
 const accountNameDisplay = document.getElementById('account-name');
 const accountEmailDisplay = document.getElementById('account-email-display');
 const accountInitialBalanceDisplay = document.getElementById('initial-balance-display');
+
 const accountForm = document.getElementById('account-form');
 const accountNameInput = document.getElementById('account-name-input');
 const accountEmailInput = document.getElementById('account-email-input');
 const accountPasswordInput = document.getElementById('account-password-input');
 const accountPasswordConfirmInput = document.getElementById('account-password-confirm-input');
 const initialBalanceInput = document.getElementById('initial-balance-input');
+
 const passwordToggles = document.querySelectorAll('.password-toggle');
 const appContent = document.getElementById('app-content');
 
 let transactions = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let account = JSON.parse(localStorage.getItem(ACCOUNT_KEY) || 'null');
-let editIndex = null;
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL'
   }).format(value);
-}
-
-function getInitialBalance() {
-  return account ? Number(account.initialBalance) : 0;
-}
-
-function calculateSummary(items) {
-  const summary = items.reduce((acc, transaction) => {
-    if (transaction.type === 'income') {
-      acc.income += transaction.amount;
-    } else {
-      acc.expense += transaction.amount;
-    }
-    return acc;
-  }, {
-    income: 0,
-    expense: 0
-  });
-
-  summary.balance = getInitialBalance() + summary.income - summary.expense;
-  summary.savings = summary.balance >= 0 ? summary.balance : 0;
-
-  return summary;
 }
 
 function saveTransactions() {
@@ -77,54 +47,59 @@ function saveAccount() {
   localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account));
 }
 
-function createTransactionRow(transaction, index) {
-  const row = document.createElement('tr');
-  const typeLabel = transaction.type === 'income' ? 'Entrada' : 'Saída';
-  const badgeClass = transaction.type === 'income'
-    ? 'badge-income'
-    : 'badge-expense';
-
-  row.innerHTML = `
-    <td>${transaction.description}</td>
-    <td>${transaction.category}</td>
-    <td>${formatCurrency(
-      transaction.type === 'expense'
-        ? -transaction.amount
-        : transaction.amount
-    )}</td>
-    <td><span class="badge ${badgeClass}">${typeLabel}</span></td>
-    <td>
-      <button class="edit-btn" data-action="edit" data-index="${index}">
-        Editar
-      </button>
-      <button class="delete-btn" data-action="delete" data-index="${index}">
-        Remover
-      </button>
-    </td>
-  `;
-
-  return row;
+function getInitialBalance() {
+  return account ? Number(account.initialBalance) : 0;
 }
 
-function renderTransactions() {
-  transactionList.innerHTML = '';
+function calculateSummary() {
+  let income = 0;
+  let expense = 0;
 
-  if (transactions.length === 0) {
-    transactionList.innerHTML = `
-      <tr>
-        <td colspan="5">
-          Nenhuma movimentação registrada ainda.
-        </td>
-      </tr>
-    `;
-    return;
+  transactions.forEach((transaction) => {
+    if (transaction.type === 'income') {
+      income += transaction.amount;
+    } else {
+      expense += transaction.amount;
+    }
+  });
+
+  const balance = getInitialBalance() + income - expense;
+  const savings = balance >= 0 ? balance : 0;
+
+  return {
+    income,
+    expense,
+    balance,
+    savings
+  };
+}
+
+function renderSummary() {
+  const summary = calculateSummary();
+
+  if (incomeSummaryDisplay) {
+    incomeSummaryDisplay.textContent = formatCurrency(summary.income);
   }
 
-  transactions.forEach((transaction, index) => {
-    transactionList.appendChild(
-      createTransactionRow(transaction, index)
-    );
-  });
+  if (expenseSummaryDisplay) {
+    expenseSummaryDisplay.textContent = formatCurrency(summary.expense);
+  }
+
+  if (incomeSummaryCardDisplay) {
+    incomeSummaryCardDisplay.textContent = formatCurrency(summary.income);
+  }
+
+  if (expenseSummaryCardDisplay) {
+    expenseSummaryCardDisplay.textContent = formatCurrency(summary.expense);
+  }
+
+  if (balanceDisplay) {
+    balanceDisplay.textContent = formatCurrency(summary.balance);
+  }
+
+  if (savingsDisplay) {
+    savingsDisplay.textContent = formatCurrency(summary.savings);
+  }
 }
 
 function renderAccountInfo() {
@@ -140,46 +115,57 @@ function renderAccountInfo() {
   appContent.classList.remove('hidden');
 
   accountNameDisplay.textContent = account.name;
-
-  if (accountEmailDisplay) {
-    accountEmailDisplay.textContent = account.email;
-  }
-
-  accountInitialBalanceDisplay.textContent =
-    formatCurrency(getInitialBalance());
+  accountEmailDisplay.textContent = account.email;
+  accountInitialBalanceDisplay.textContent = formatCurrency(account.initialBalance);
 }
 
-function renderSummary() {
-  const summary = calculateSummary(transactions);
+function renderTransactions() {
+  transactionList.innerHTML = '';
 
-  if (incomeSummaryDisplay) {
-    incomeSummaryDisplay.textContent =
-      formatCurrency(summary.income);
+  if (transactions.length === 0) {
+    transactionList.innerHTML = `
+      <tr>
+        <td colspan="5">Nenhuma movimentação registrada.</td>
+      </tr>
+    `;
+    return;
   }
 
-  if (expenseSummaryDisplay) {
-    expenseSummaryDisplay.textContent =
-      formatCurrency(summary.expense);
-  }
+  transactions.forEach((transaction, index) => {
+    const row = document.createElement('tr');
 
-  if (incomeSummaryCardDisplay) {
-    incomeSummaryCardDisplay.textContent =
-      formatCurrency(summary.income);
-  }
+    row.innerHTML = `
+      <td>${transaction.description}</td>
+      <td>${transaction.category}</td>
+      <td>${formatCurrency(transaction.amount)}</td>
+      <td>${transaction.type === 'income' ? 'Entrada' : 'Saída'}</td>
+      <td>
+        <button class="edit-btn" data-action="edit" data-index="${index}">
+          Editar
+        </button>
 
-  if (expenseSummaryCardDisplay) {
-    expenseSummaryCardDisplay.textContent =
-      formatCurrency(summary.expense);
-  }
+        <button class="delete-btn" data-action="delete" data-index="${index}">
+          Remover
+        </button>
+      </td>
+    `;
 
-  if (balanceDisplay) {
-    balanceDisplay.textContent =
-      formatCurrency(summary.balance);
-  }
+    transactionList.appendChild(row);
+  });
+}
 
-  if (savingsDisplay) {
-    savingsDisplay.textContent =
-      formatCurrency(summary.savings);
+function togglePasswordVisibility(button) {
+  const targetId = button.dataset.target;
+  const input = document.getElementById(targetId);
+
+  if (!input) return;
+
+  if (input.type === 'password') {
+    input.type = 'text';
+    button.textContent = 'Ocultar';
+  } else {
+    input.type = 'password';
+    button.textContent = 'Mostrar';
   }
 }
 
@@ -192,25 +178,13 @@ async function handleAccountSubmit(event) {
   const passwordConfirm = accountPasswordConfirmInput.value;
   const initialBalance = Number(initialBalanceInput.value);
 
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (!name || !email || !emailPattern.test(email)) {
-    alert('Informe nome e e-mail válido.');
-    return;
-  }
-
-  if (!password || password.length < 6) {
-    alert('Senha precisa ter pelo menos 6 caracteres.');
+  if (!name || !email || !password) {
+    alert('Preencha todos os campos.');
     return;
   }
 
   if (password !== passwordConfirm) {
     alert('As senhas não coincidem.');
-    return;
-  }
-
-  if (isNaN(initialBalance) || initialBalance < 0) {
-    alert('Informe um saldo inicial válido.');
     return;
   }
 
@@ -231,14 +205,14 @@ async function handleAccountSubmit(event) {
     const result = await response.json();
 
     if (!result.success) {
-      alert(result.message || 'Erro ao cadastrar.');
+      alert(result.message);
       return;
     }
 
     account = {
       name,
       email,
-      initialBalance: initialBalance.toFixed(2)
+      initialBalance
     };
 
     saveAccount();
@@ -249,30 +223,22 @@ async function handleAccountSubmit(event) {
     accountForm.reset();
 
     alert('Conta criada com sucesso!');
-
   } catch (error) {
     console.error(error);
-    alert('Erro ao conectar com o servidor.');
+    alert('Erro ao conectar com servidor.');
   }
 }
 
 function addTransaction(event) {
   event.preventDefault();
 
-  const description =
-    document.getElementById('description').value.trim();
-
-  const amount =
-    Number(document.getElementById('amount').value);
-
-  const category =
-    document.getElementById('category').value;
-
-  const type =
-    document.querySelector('input[name="type"]:checked').value;
+  const description = document.getElementById('description').value.trim();
+  const amount = Number(document.getElementById('amount').value);
+  const category = document.getElementById('category').value;
+  const type = document.querySelector('input[name="type"]:checked').value;
 
   if (!description || amount <= 0) {
-    alert('Preencha os dados corretamente.');
+    alert('Preencha os campos corretamente.');
     return;
   }
 
@@ -280,8 +246,7 @@ function addTransaction(event) {
     description,
     amount,
     category,
-    type,
-    createdAt: new Date().toISOString()
+    type
   });
 
   saveTransactions();
@@ -291,58 +256,91 @@ function addTransaction(event) {
   form.reset();
 }
 
+function editTransaction(index) {
+  const transaction = transactions[index];
+
+  const newDescription = prompt(
+    'Editar descrição:',
+    transaction.description
+  );
+
+  if (!newDescription) return;
+
+  const newAmount = Number(
+    prompt(
+      'Editar valor:',
+      transaction.amount
+    )
+  );
+
+  if (!newAmount || newAmount <= 0) {
+    alert('Valor inválido.');
+    return;
+  }
+
+  transaction.description = newDescription;
+  transaction.amount = newAmount;
+
+  saveTransactions();
+  renderTransactions();
+  renderSummary();
+}
+
 function removeTransaction(index) {
   transactions.splice(index, 1);
+
   saveTransactions();
   renderTransactions();
   renderSummary();
 }
 
 function clearAllTransactions() {
-  const confirmClear =
-    confirm('Deseja apagar tudo?');
+  const confirmClear = confirm(
+    'Deseja apagar todas as movimentações?'
+  );
 
   if (!confirmClear) return;
 
   transactions = [];
+
   saveTransactions();
   renderTransactions();
   renderSummary();
 }
 
 if (accountForm) {
-  accountForm.addEventListener(
-    'submit',
-    handleAccountSubmit
-  );
+  accountForm.addEventListener('submit', handleAccountSubmit);
 }
 
 if (form) {
-  form.addEventListener(
-    'submit',
-    addTransaction
-  );
+  form.addEventListener('submit', addTransaction);
 }
 
 if (clearAllButton) {
-  clearAllButton.addEventListener(
-    'click',
-    clearAllTransactions
-  );
+  clearAllButton.addEventListener('click', clearAllTransactions);
+}
+
+if (passwordToggles.length) {
+  passwordToggles.forEach((button) => {
+    button.addEventListener('click', () => {
+      togglePasswordVisibility(button);
+    });
+  });
 }
 
 if (transactionList) {
   transactionList.addEventListener('click', (event) => {
-    const button =
-      event.target.closest('button[data-action]');
+    const button = event.target.closest('button[data-action]');
 
     if (!button) return;
 
-    const index =
-      Number(button.dataset.index);
+    const index = Number(button.dataset.index);
+    const action = button.dataset.action;
 
-    const action =
-      button.dataset.action;
+    if (action === 'edit') {
+      editTransaction(index);
+      return;
+    }
 
     if (action === 'delete') {
       removeTransaction(index);
