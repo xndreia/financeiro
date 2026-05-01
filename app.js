@@ -33,6 +33,8 @@ const editBalanceButton = document.getElementById('edit-balance-button');
 const balanceForm = document.getElementById('balance-form');
 const balanceInput = document.getElementById('balance-input');
 const cancelBalanceEditButton = document.getElementById('cancel-balance-edit');
+const dateInput = document.getElementById('date');
+const editDateInput = document.getElementById('edit-date');
 
 const passwordToggles = document.querySelectorAll('.password-toggle');
 
@@ -63,6 +65,17 @@ function formatCurrency(value) {
     style: 'currency',
     currency: 'BRL'
   }).format(value);
+}
+
+function formatDate(value) {
+  if (!value) return '---';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '---';
+  return date.toLocaleDateString('pt-BR');
+}
+
+function getTodayDate() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 function getInitialBalance() {
@@ -182,6 +195,7 @@ function renderTransactions() {
 
     row.innerHTML = `
       <td>${transaction.description}</td>
+      <td>${formatDate(transaction.date)}</td>
       <td>${transaction.category}</td>
       <td>${formatCurrency(transaction.amount)}</td>
       <td>${transaction.type === 'income' ? 'Entrada' : 'Saída'}</td>
@@ -365,9 +379,10 @@ function addTransaction(event) {
   const description = document.getElementById('description').value.trim();
   const amount = Number(document.getElementById('amount').value);
   const category = document.getElementById('category').value;
+  const date = dateInput?.value || getTodayDate();
   const type = document.querySelector('input[name="type"]:checked').value;
 
-  if (!description || amount <= 0) {
+  if (!description || amount <= 0 || !date) {
     alert('Preencha corretamente.');
     return;
   }
@@ -376,6 +391,7 @@ function addTransaction(event) {
     description,
     amount,
     category,
+    date,
     type
   });
 
@@ -384,6 +400,9 @@ function addTransaction(event) {
   renderSummary();
 
   form.reset();
+  if (dateInput) {
+    dateInput.value = getTodayDate();
+  }
 }
 
 // MODAL BONITO
@@ -395,6 +414,7 @@ function editTransaction(index) {
 
   editDescriptionInput.value = transaction.description;
   editAmountInput.value = transaction.amount;
+  editDateInput.value = transaction.date || getTodayDate();
   editCategoryInput.value = transaction.category;
 
   editTypeInputs.forEach(input => {
@@ -417,6 +437,7 @@ function saveEditedTransaction(event) {
 
   const description = editDescriptionInput.value.trim();
   const amount = Number(editAmountInput.value);
+  const date = editDateInput?.value || getTodayDate();
   const category = editCategoryInput.value;
   const type = document.querySelector(
     'input[name="edit-type"]:checked'
@@ -426,6 +447,7 @@ function saveEditedTransaction(event) {
     ...transactions[editIndex],
     description,
     amount,
+    date,
     category,
     type
   };
