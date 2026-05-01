@@ -50,6 +50,10 @@ let transactions = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let account = JSON.parse(localStorage.getItem(ACCOUNT_KEY) || 'null');
 let editIndex = null;
 
+if (account && typeof account.balanceAdjustment !== 'number') {
+  account.balanceAdjustment = 0;
+}
+
 function saveTransactions() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
 }
@@ -69,6 +73,10 @@ function getInitialBalance() {
   return account ? Number(account.initialBalance) : 0;
 }
 
+function getBalanceAdjustment() {
+  return account ? Number(account.balanceAdjustment || 0) : 0;
+}
+
 function calculateSummary() {
   let income = 0;
   let expense = 0;
@@ -81,11 +89,13 @@ function calculateSummary() {
     }
   });
 
+  const balance = getInitialBalance() + income - expense + getBalanceAdjustment();
+
   return {
     income,
     expense,
-    balance: getInitialBalance() + income - expense,
-    savings: Math.max(getInitialBalance() + income - expense, 0)
+    balance,
+    savings: Math.max(balance, 0)
   };
 }
 
@@ -227,7 +237,7 @@ function saveBalanceEdit(event) {
     return;
   }
 
-  account.initialBalance = newBalance - getNetTransactions();
+  account.balanceAdjustment = newBalance - getInitialBalance() - getNetTransactions();
   saveAccount();
   renderAccountInfo();
   renderSummary();
@@ -291,7 +301,8 @@ async function handleAccountSubmit(event) {
       account = {
         name,
         email,
-        initialBalance
+        initialBalance,
+        balanceAdjustment: 0
       };
 
       saveAccount();
@@ -322,7 +333,8 @@ async function handleAccountSubmit(event) {
       account = {
         name: loginResult.account.name,
         email: loginResult.account.email,
-        initialBalance: loginResult.account.initialBalance
+        initialBalance: loginResult.account.initialBalance,
+        balanceAdjustment: 0
       };
 
       saveAccount();
