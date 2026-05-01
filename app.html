@@ -29,7 +29,20 @@
     <section class="card account-card">
       <div id="account-info" class="account-info hidden">
         <p class="eyebrow">Conta ativa</p>
-        <h2 id="account-name">Minha conta</h2>
+        <div class="account-name-row">
+          <h2 id="account-name">Minha conta</h2>
+          <button id="edit-account-name-button" type="button" class="secondary-btn">Editar nome</button>
+        </div>
+        <form id="edit-account-name-form" class="hidden">
+          <div class="form-group">
+            <label for="edit-account-name-input">Nome da conta</label>
+            <input id="edit-account-name-input" type="text" placeholder="Digite o novo nome" />
+          </div>
+          <div class="button-row">
+            <button type="submit" class="primary-btn">Salvar</button>
+            <button type="button" id="cancel-account-name-edit" class="secondary-btn">Cancelar</button>
+          </div>
+        </form>
         <p class="balance-text">E-mail: <strong id="account-email-display">seu@email.com</strong></p>
         <p class="balance-text">Saldo inicial: <strong id="initial-balance-display">R$ 0,00</strong></p>
         <p class="balance-text">Agora você pode usar o app para registrar entradas e saídas.</p>
