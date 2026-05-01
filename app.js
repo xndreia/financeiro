@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'minha-grana-transacoes';
-const ACCOUNT_KEY = 'minha-grana-conta';
+const STORAGE_KEY = 'meu financeiro-transacoes';
+const ACCOUNT_KEY = 'meu-financeiro-conta';
 
 const API_URL = 'https://financeiro-xkxw.onrender.com';
 
