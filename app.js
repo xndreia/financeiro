@@ -1,6 +1,8 @@
 const STORAGE_KEY = 'minha-grana-transacoes';
 const ACCOUNT_KEY = 'minha-grana-conta';
 
+const API_URL = 'https://financeiro-xkxw.onrender.com';
+
 const form = document.getElementById('transaction-form');
 const transactionList = document.getElementById('transaction-list');
 const incomeSummaryDisplay = document.getElementById('income-summary');
@@ -40,7 +42,7 @@ let editIndex = null;
 function formatCurrency(value) {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
-    currency: 'BRL',
+    currency: 'BRL'
   }).format(value);
 }
 
@@ -49,20 +51,21 @@ function getInitialBalance() {
 }
 
 function calculateSummary(items) {
-  const summary = items.reduce(
-    (acc, transaction) => {
-      if (transaction.type === 'income') {
-        acc.income += transaction.amount;
-      } else {
-        acc.expense += transaction.amount;
-      }
-      return acc;
-    },
-    { income: 0, expense: 0 }
-  );
+  const summary = items.reduce((acc, transaction) => {
+    if (transaction.type === 'income') {
+      acc.income += transaction.amount;
+    } else {
+      acc.expense += transaction.amount;
+    }
+    return acc;
+  }, {
+    income: 0,
+    expense: 0
+  });
 
   summary.balance = getInitialBalance() + summary.income - summary.expense;
   summary.savings = summary.balance >= 0 ? summary.balance : 0;
+
   return summary;
 }
 
@@ -77,16 +80,26 @@ function saveAccount() {
 function createTransactionRow(transaction, index) {
   const row = document.createElement('tr');
   const typeLabel = transaction.type === 'income' ? 'Entrada' : 'Saída';
-  const badgeClass = transaction.type === 'income' ? 'badge-income' : 'badge-expense';
+  const badgeClass = transaction.type === 'income'
+    ? 'badge-income'
+    : 'badge-expense';
 
   row.innerHTML = `
     <td>${transaction.description}</td>
     <td>${transaction.category}</td>
-    <td>${formatCurrency(transaction.type === 'expense' ? -transaction.amount : transaction.amount)}</td>
+    <td>${formatCurrency(
+      transaction.type === 'expense'
+        ? -transaction.amount
+        : transaction.amount
+    )}</td>
     <td><span class="badge ${badgeClass}">${typeLabel}</span></td>
     <td>
-      <button class="edit-btn" data-action="edit" data-index="${index}">Editar</button>
-      <button class="delete-btn" data-action="delete" data-index="${index}">Remover</button>
+      <button class="edit-btn" data-action="edit" data-index="${index}">
+        Editar
+      </button>
+      <button class="delete-btn" data-action="delete" data-index="${index}">
+        Remover
+      </button>
     </td>
   `;
 
@@ -97,27 +110,21 @@ function renderTransactions() {
   transactionList.innerHTML = '';
 
   if (transactions.length === 0) {
-    transactionList.innerHTML = '<tr><td colspan="5" style="color: var(--muted); padding: 1.5rem 0;">Nenhuma movimentação registrada ainda.</td></tr>';
+    transactionList.innerHTML = `
+      <tr>
+        <td colspan="5">
+          Nenhuma movimentação registrada ainda.
+        </td>
+      </tr>
+    `;
     return;
   }
 
   transactions.forEach((transaction, index) => {
-    transactionList.appendChild(createTransactionRow(transaction, index));
+    transactionList.appendChild(
+      createTransactionRow(transaction, index)
+    );
   });
-}
-
-function togglePasswordVisibility(button) {
-  const targetId = button.dataset.target;
-  const input = document.getElementById(targetId);
-  if (!input) return;
-
-  if (input.type === 'password') {
-    input.type = 'text';
-    button.textContent = 'Ocultar';
-  } else {
-    input.type = 'password';
-    button.textContent = 'Mostrar';
-  }
 }
 
 function renderAccountInfo() {
@@ -131,19 +138,49 @@ function renderAccountInfo() {
   accountInfoSection.classList.remove('hidden');
   accountFormWrapper.classList.add('hidden');
   appContent.classList.remove('hidden');
+
   accountNameDisplay.textContent = account.name;
-  if (accountEmailDisplay) accountEmailDisplay.textContent = account.email;
-  accountInitialBalanceDisplay.textContent = formatCurrency(getInitialBalance());
+
+  if (accountEmailDisplay) {
+    accountEmailDisplay.textContent = account.email;
+  }
+
+  accountInitialBalanceDisplay.textContent =
+    formatCurrency(getInitialBalance());
 }
 
 function renderSummary() {
   const summary = calculateSummary(transactions);
-  if (incomeSummaryDisplay) incomeSummaryDisplay.textContent = formatCurrency(summary.income);
-  if (expenseSummaryDisplay) expenseSummaryDisplay.textContent = formatCurrency(summary.expense);
-  if (incomeSummaryCardDisplay) incomeSummaryCardDisplay.textContent = formatCurrency(summary.income);
-  if (expenseSummaryCardDisplay) expenseSummaryCardDisplay.textContent = formatCurrency(summary.expense);
-  if (balanceDisplay) balanceDisplay.textContent = formatCurrency(summary.balance);
-  if (savingsDisplay) savingsDisplay.textContent = formatCurrency(summary.savings);
+
+  if (incomeSummaryDisplay) {
+    incomeSummaryDisplay.textContent =
+      formatCurrency(summary.income);
+  }
+
+  if (expenseSummaryDisplay) {
+    expenseSummaryDisplay.textContent =
+      formatCurrency(summary.expense);
+  }
+
+  if (incomeSummaryCardDisplay) {
+    incomeSummaryCardDisplay.textContent =
+      formatCurrency(summary.income);
+  }
+
+  if (expenseSummaryCardDisplay) {
+    expenseSummaryCardDisplay.textContent =
+      formatCurrency(summary.expense);
+  }
+
+  if (balanceDisplay) {
+    balanceDisplay.textContent =
+      formatCurrency(summary.balance);
+  }
+
+  if (savingsDisplay) {
+    savingsDisplay.textContent =
+      formatCurrency(summary.savings);
+  }
 }
 
 async function handleAccountSubmit(event) {
@@ -154,10 +191,16 @@ async function handleAccountSubmit(event) {
   const password = accountPasswordInput.value;
   const passwordConfirm = accountPasswordConfirmInput.value;
   const initialBalance = Number(initialBalanceInput.value);
+
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (!name || !email || !emailPattern.test(email) || !password || password.length < 6) {
-    alert('Informe nome, e-mail válido e senha com pelo menos 6 caracteres.');
+  if (!name || !email || !emailPattern.test(email)) {
+    alert('Informe nome e e-mail válido.');
+    return;
+  }
+
+  if (!password || password.length < 6) {
+    alert('Senha precisa ter pelo menos 6 caracteres.');
     return;
   }
 
@@ -172,51 +215,64 @@ async function handleAccountSubmit(event) {
   }
 
   try {
-    const response = await fetch('/api/register', {
+    const response = await fetch(`${API_URL}/api/register`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, initialBalance }),
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+        initialBalance
+      })
     });
 
     const result = await response.json();
+
     if (!result.success) {
-      alert(result.message || 'Erro ao cadastrar conta.');
+      alert(result.message || 'Erro ao cadastrar.');
       return;
     }
 
     account = {
       name,
       email,
-      initialBalance: initialBalance.toFixed(2),
+      initialBalance: initialBalance.toFixed(2)
     };
 
     saveAccount();
     renderAccountInfo();
     renderSummary();
     renderTransactions();
+
     accountForm.reset();
-    alert(result.message || 'Conta criada com sucesso.');
+
+    alert('Conta criada com sucesso!');
+
   } catch (error) {
     console.error(error);
-    alert('Erro ao conectar com o servidor. Tente novamente.');
+    alert('Erro ao conectar com o servidor.');
   }
 }
 
 function addTransaction(event) {
   event.preventDefault();
 
-  if (!account) {
-    alert('Crie sua conta antes de registrar movimentações.');
-    return;
-  }
+  const description =
+    document.getElementById('description').value.trim();
 
-  const description = document.getElementById('description').value.trim();
-  const amount = Number(document.getElementById('amount').value);
-  const category = document.getElementById('category').value;
-  const type = document.querySelector('input[name="type"]:checked').value;
+  const amount =
+    Number(document.getElementById('amount').value);
 
-  if (!description || !amount || amount <= 0) {
-    alert('Preencha a descrição e um valor válido.');
+  const category =
+    document.getElementById('category').value;
+
+  const type =
+    document.querySelector('input[name="type"]:checked').value;
+
+  if (!description || amount <= 0) {
+    alert('Preencha os dados corretamente.');
     return;
   }
 
@@ -225,73 +281,14 @@ function addTransaction(event) {
     amount,
     category,
     type,
-    createdAt: new Date().toISOString(),
+    createdAt: new Date().toISOString()
   });
 
   saveTransactions();
   renderTransactions();
   renderSummary();
+
   form.reset();
-  document.getElementById('description').focus();
-}
-
-function startEditTransaction(index) {
-  const transaction = transactions[index];
-  if (!transaction) return;
-
-  editIndex = index;
-  if (editDescriptionInput) editDescriptionInput.value = transaction.description;
-  if (editAmountInput) editAmountInput.value = transaction.amount;
-  if (editCategoryInput) editCategoryInput.value = transaction.category;
-  editTypeInputs.forEach((input) => {
-    input.checked = input.value === transaction.type;
-  });
-
-  showEditBalloon();
-}
-
-function showEditBalloon() {
-  if (editBalloon) editBalloon.classList.remove('hidden');
-}
-
-function hideEditBalloon() {
-  if (editBalloon) editBalloon.classList.add('hidden');
-}
-
-function clearEditState() {
-  editIndex = null;
-  hideEditBalloon();
-  if (editTransactionForm) editTransactionForm.reset();
-}
-
-function saveEditedTransaction(event) {
-  event.preventDefault();
-
-  if (editIndex === null) return;
-  if (!editDescriptionInput || !editAmountInput || !editCategoryInput) return;
-
-  const description = editDescriptionInput.value.trim();
-  const amount = Number(editAmountInput.value);
-  const category = editCategoryInput.value;
-  const type = document.querySelector('input[name="edit-type"]:checked')?.value;
-
-  if (!description || !amount || amount <= 0 || !type) {
-    alert('Preencha a descrição, valor e tipo corretamente.');
-    return;
-  }
-
-  transactions[editIndex] = {
-    ...transactions[editIndex],
-    description,
-    amount,
-    category,
-    type,
-  };
-
-  saveTransactions();
-  renderTransactions();
-  renderSummary();
-  clearEditState();
 }
 
 function removeTransaction(index) {
@@ -299,70 +296,58 @@ function removeTransaction(index) {
   saveTransactions();
   renderTransactions();
   renderSummary();
-  clearEditState();
 }
 
-
 function clearAllTransactions() {
-  if (!transactions.length) return;
-  const confirmClear = confirm('Deseja limpar todas as movimentações?');
+  const confirmClear =
+    confirm('Deseja apagar tudo?');
+
   if (!confirmClear) return;
 
   transactions = [];
   saveTransactions();
   renderTransactions();
   renderSummary();
-  clearEditState();
 }
 
 if (accountForm) {
-  accountForm.addEventListener('submit', handleAccountSubmit);
+  accountForm.addEventListener(
+    'submit',
+    handleAccountSubmit
+  );
 }
 
-if (passwordToggles.length) {
-  passwordToggles.forEach((button) => {
-    button.addEventListener('click', () => togglePasswordVisibility(button));
-  });
+if (form) {
+  form.addEventListener(
+    'submit',
+    addTransaction
+  );
+}
+
+if (clearAllButton) {
+  clearAllButton.addEventListener(
+    'click',
+    clearAllTransactions
+  );
 }
 
 if (transactionList) {
   transactionList.addEventListener('click', (event) => {
-    const button = event.target.closest('button[data-action]');
+    const button =
+      event.target.closest('button[data-action]');
+
     if (!button) return;
 
-    const index = Number(button.dataset.index);
-    const action = button.dataset.action;
+    const index =
+      Number(button.dataset.index);
 
-    if (action === 'edit') {
-      startEditTransaction(index);
-      return;
-    }
+    const action =
+      button.dataset.action;
 
     if (action === 'delete') {
       removeTransaction(index);
-      return;
     }
   });
-}
-
-if (editTransactionForm) {
-  editTransactionForm.addEventListener('submit', saveEditedTransaction);
-}
-
-if (closeEditBalloonButton) {
-  closeEditBalloonButton.addEventListener('click', clearEditState);
-}
-
-if (cancelEditBalloonButton) {
-  cancelEditBalloonButton.addEventListener('click', clearEditState);
-}
-
-if (form) {
-  form.addEventListener('submit', addTransaction);
-}
-
-if (clearAllButton) {
-  clearAllButton.addEventListener('click', clearAllTransactions);
 }
 
 renderAccountInfo();
