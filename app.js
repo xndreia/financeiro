@@ -20,6 +20,10 @@ const appContent = document.getElementById('app-content');
 const accountNameDisplay = document.getElementById('account-name');
 const accountEmailDisplay = document.getElementById('account-email-display');
 const accountInitialBalanceDisplay = document.getElementById('initial-balance-display');
+const editAccountNameButton = document.getElementById('edit-account-name-button');
+const editAccountNameForm = document.getElementById('edit-account-name-form');
+const editAccountNameInput = document.getElementById('edit-account-name-input');
+const cancelAccountNameEditButton = document.getElementById('cancel-account-name-edit');
 
 const incomeSummaryDisplay = document.getElementById('income-summary');
 const expenseSummaryDisplay = document.getElementById('expense-summary');
@@ -130,6 +134,35 @@ function renderAccountInfo() {
   }
 }
 
+function showAccountNameEdit() {
+  if (!account) return;
+  editAccountNameInput.value = account.name || '';
+  editAccountNameForm.classList.remove('hidden');
+  editAccountNameButton.classList.add('hidden');
+}
+
+function hideAccountNameEdit() {
+  editAccountNameForm.classList.add('hidden');
+  editAccountNameButton.classList.remove('hidden');
+}
+
+function saveAccountName(event) {
+  event.preventDefault();
+
+  if (!account) return;
+
+  const newName = editAccountNameInput.value.trim();
+  if (!newName) {
+    alert('Informe um nome válido para a conta.');
+    return;
+  }
+
+  account.name = newName;
+  saveAccount();
+  renderAccountInfo();
+  hideAccountNameEdit();
+}
+
 function renderTransactions() {
   transactionList.innerHTML = '';
 
@@ -230,6 +263,16 @@ async function handleAccountSubmit(event) {
     return;
   }
 
+  if (!password) {
+    alert('Informe uma senha.');
+    return;
+  }
+
+  if (password !== passwordConfirm) {
+    alert('As senhas não conferem.');
+    return;
+  }
+
   try {
     const registerResponse = await fetch(`${API_URL}/api/register`, {
       method: 'POST',
@@ -263,14 +306,16 @@ async function handleAccountSubmit(event) {
     }
 
     if (registerResult.message === 'E-mail já cadastrado.') {
-      const loginResponse = await fetch(
-        `${API_URL}/api/account?email=${encodeURIComponent(email)}`
-      );
+      const loginResponse = await fetch(`${API_URL}/api/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
 
       const loginResult = await loginResponse.json();
 
       if (!loginResult.success) {
-        alert('Erro ao entrar.');
+        alert(loginResult.message || 'Erro ao entrar.');
         return;
       }
 
@@ -290,6 +335,8 @@ async function handleAccountSubmit(event) {
       alert('Login realizado com sucesso!');
       return;
     }
+
+    alert(registerResult.message || 'Erro ao registrar.');
 
   } catch (error) {
     console.error(error);
@@ -420,6 +467,10 @@ transactionList?.addEventListener('click', (event) => {
 editTransactionForm?.addEventListener('submit', saveEditedTransaction);
 closeEditBalloonButton?.addEventListener('click', closeEditModal);
 cancelEditBalloonButton?.addEventListener('click', closeEditModal);
+
+editAccountNameButton?.addEventListener('click', showAccountNameEdit);
+editAccountNameForm?.addEventListener('submit', saveAccountName);
+cancelAccountNameEditButton?.addEventListener('click', hideAccountNameEdit);
 
 editBalanceButton?.addEventListener('click', showBalanceEdit);
 balanceForm?.addEventListener('submit', saveBalanceEdit);
