@@ -1,6 +1,5 @@
-const STORAGE_KEY = 'minha-grana-transacoes';
-const ACCOUNT_KEY = 'minha-grana-conta';
-
+const STORAGE_KEY = 'meu-financeiro-transacoes';
+const ACCOUNT_KEY = 'meu-financeiro-conta';
 const API_URL = 'https://financeiro-xkxw.onrender.com';
 
 const form = document.getElementById('transaction-form');
@@ -29,8 +28,19 @@ const initialBalanceInput = document.getElementById('initial-balance-input');
 const passwordToggles = document.querySelectorAll('.password-toggle');
 const appContent = document.getElementById('app-content');
 
+// BALÃO DE EDIÇÃO
+const editBalloon = document.getElementById('edit-balloon');
+const editTransactionForm = document.getElementById('edit-transaction-form');
+const editDescriptionInput = document.getElementById('edit-description');
+const editAmountInput = document.getElementById('edit-amount');
+const editCategoryInput = document.getElementById('edit-category');
+const editTypeInputs = document.querySelectorAll('input[name="edit-type"]');
+const closeEditBalloonButton = document.getElementById('close-edit-balloon');
+const cancelEditBalloonButton = document.getElementById('cancel-edit-balloon');
+
 let transactions = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let account = JSON.parse(localStorage.getItem(ACCOUNT_KEY) || 'null');
+let editIndex = null;
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('pt-BR', {
@@ -66,12 +76,7 @@ function calculateSummary() {
   const balance = getInitialBalance() + income - expense;
   const savings = balance >= 0 ? balance : 0;
 
-  return {
-    income,
-    expense,
-    balance,
-    savings
-  };
+  return { income, expense, balance, savings };
 }
 
 function renderSummary() {
@@ -258,32 +263,55 @@ function addTransaction(event) {
 
 function editTransaction(index) {
   const transaction = transactions[index];
+  if (!transaction) return;
 
-  const newDescription = prompt(
-    'Editar descrição:',
-    transaction.description
-  );
+  editIndex = index;
 
-  if (!newDescription) return;
+  editDescriptionInput.value = transaction.description;
+  editAmountInput.value = transaction.amount;
+  editCategoryInput.value = transaction.category;
 
-  const newAmount = Number(
-    prompt(
-      'Editar valor:',
-      transaction.amount
-    )
-  );
+  editTypeInputs.forEach((input) => {
+    input.checked = input.value === transaction.type;
+  });
 
-  if (!newAmount || newAmount <= 0) {
-    alert('Valor inválido.');
+  editBalloon.classList.remove('hidden');
+}
+
+function closeEditBalloon() {
+  editBalloon.classList.add('hidden');
+  editTransactionForm.reset();
+  editIndex = null;
+}
+
+function saveEditedTransaction(event) {
+  event.preventDefault();
+
+  if (editIndex === null) return;
+
+  const description = editDescriptionInput.value.trim();
+  const amount = Number(editAmountInput.value);
+  const category = editCategoryInput.value;
+  const type = document.querySelector('input[name="edit-type"]:checked')?.value;
+
+  if (!description || amount <= 0) {
+    alert('Preencha corretamente.');
     return;
   }
 
-  transaction.description = newDescription;
-  transaction.amount = newAmount;
+  transactions[editIndex] = {
+    ...transactions[editIndex],
+    description,
+    amount,
+    category,
+    type
+  };
 
   saveTransactions();
   renderTransactions();
   renderSummary();
+
+  closeEditBalloon();
 }
 
 function removeTransaction(index) {
@@ -295,9 +323,7 @@ function removeTransaction(index) {
 }
 
 function clearAllTransactions() {
-  const confirmClear = confirm(
-    'Deseja apagar todas as movimentações?'
-  );
+  const confirmClear = confirm('Deseja apagar todas as movimentações?');
 
   if (!confirmClear) return;
 
@@ -331,7 +357,6 @@ if (passwordToggles.length) {
 if (transactionList) {
   transactionList.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-action]');
-
     if (!button) return;
 
     const index = Number(button.dataset.index);
@@ -346,6 +371,18 @@ if (transactionList) {
       removeTransaction(index);
     }
   });
+}
+
+if (editTransactionForm) {
+  editTransactionForm.addEventListener('submit', saveEditedTransaction);
+}
+
+if (closeEditBalloonButton) {
+  closeEditBalloonButton.addEventListener('click', closeEditBalloon);
+}
+
+if (cancelEditBalloonButton) {
+  cancelEditBalloonButton.addEventListener('click', closeEditBalloon);
 }
 
 renderAccountInfo();
