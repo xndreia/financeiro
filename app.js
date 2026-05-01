@@ -1,22 +1,10 @@
-const STORAGE_KEY = 'meu-financeiro-transacoes';
-const ACCOUNT_KEY = 'meu-financeiro-conta';
+const STORAGE_KEY = 'minha-grana-transacoes';
+const ACCOUNT_KEY = 'minha-grana-conta';
 const API_URL = 'https://financeiro-xkxw.onrender.com';
 
 const form = document.getElementById('transaction-form');
 const transactionList = document.getElementById('transaction-list');
-const incomeSummaryDisplay = document.getElementById('income-summary');
-const expenseSummaryDisplay = document.getElementById('expense-summary');
-const incomeSummaryCardDisplay = document.getElementById('income-summary-card');
-const expenseSummaryCardDisplay = document.getElementById('expense-summary-card');
-const balanceDisplay = document.getElementById('balance');
-const savingsDisplay = document.getElementById('savings');
 const clearAllButton = document.getElementById('clear-all');
-
-const accountInfoSection = document.getElementById('account-info');
-const accountFormWrapper = document.getElementById('account-form-wrapper');
-const accountNameDisplay = document.getElementById('account-name');
-const accountEmailDisplay = document.getElementById('account-email-display');
-const accountInitialBalanceDisplay = document.getElementById('initial-balance-display');
 
 const accountForm = document.getElementById('account-form');
 const accountNameInput = document.getElementById('account-name-input');
@@ -26,9 +14,8 @@ const accountPasswordConfirmInput = document.getElementById('account-password-co
 const initialBalanceInput = document.getElementById('initial-balance-input');
 
 const passwordToggles = document.querySelectorAll('.password-toggle');
-const appContent = document.getElementById('app-content');
 
-// BALÃO DE EDIÇÃO
+// MODAL BONITO
 const editBalloon = document.getElementById('edit-balloon');
 const editTransactionForm = document.getElementById('edit-transaction-form');
 const editDescriptionInput = document.getElementById('edit-description');
@@ -42,13 +29,6 @@ let transactions = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let account = JSON.parse(localStorage.getItem(ACCOUNT_KEY) || 'null');
 let editIndex = null;
 
-function formatCurrency(value) {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(value);
-}
-
 function saveTransactions() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
 }
@@ -57,77 +37,17 @@ function saveAccount() {
   localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account));
 }
 
-function getInitialBalance() {
-  return account ? Number(account.initialBalance) : 0;
-}
-
-function calculateSummary() {
-  let income = 0;
-  let expense = 0;
-
-  transactions.forEach((transaction) => {
-    if (transaction.type === 'income') {
-      income += transaction.amount;
-    } else {
-      expense += transaction.amount;
-    }
-  });
-
-  const balance = getInitialBalance() + income - expense;
-  const savings = balance >= 0 ? balance : 0;
-
-  return { income, expense, balance, savings };
-}
-
-function renderSummary() {
-  const summary = calculateSummary();
-
-  if (incomeSummaryDisplay) {
-    incomeSummaryDisplay.textContent = formatCurrency(summary.income);
-  }
-
-  if (expenseSummaryDisplay) {
-    expenseSummaryDisplay.textContent = formatCurrency(summary.expense);
-  }
-
-  if (incomeSummaryCardDisplay) {
-    incomeSummaryCardDisplay.textContent = formatCurrency(summary.income);
-  }
-
-  if (expenseSummaryCardDisplay) {
-    expenseSummaryCardDisplay.textContent = formatCurrency(summary.expense);
-  }
-
-  if (balanceDisplay) {
-    balanceDisplay.textContent = formatCurrency(summary.balance);
-  }
-
-  if (savingsDisplay) {
-    savingsDisplay.textContent = formatCurrency(summary.savings);
-  }
-}
-
-function renderAccountInfo() {
-  if (!account) {
-    accountInfoSection.classList.add('hidden');
-    accountFormWrapper.classList.remove('hidden');
-    appContent.classList.add('hidden');
-    return;
-  }
-
-  accountInfoSection.classList.remove('hidden');
-  accountFormWrapper.classList.add('hidden');
-  appContent.classList.remove('hidden');
-
-  accountNameDisplay.textContent = account.name;
-  accountEmailDisplay.textContent = account.email;
-  accountInitialBalanceDisplay.textContent = formatCurrency(account.initialBalance);
+function formatCurrency(value) {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
 }
 
 function renderTransactions() {
   transactionList.innerHTML = '';
 
-  if (transactions.length === 0) {
+  if (!transactions.length) {
     transactionList.innerHTML = `
       <tr>
         <td colspan="5">Nenhuma movimentação registrada.</td>
@@ -159,9 +79,9 @@ function renderTransactions() {
   });
 }
 
+// MOSTRAR SENHA
 function togglePasswordVisibility(button) {
-  const targetId = button.dataset.target;
-  const input = document.getElementById(targetId);
+  const input = document.getElementById(button.dataset.target);
 
   if (!input) return;
 
@@ -174,13 +94,14 @@ function togglePasswordVisibility(button) {
   }
 }
 
+// CADASTRO
 async function handleAccountSubmit(event) {
   event.preventDefault();
 
   const name = accountNameInput.value.trim();
-  const email = accountEmailInput.value.trim().toLowerCase();
+  const email = accountEmailInput.value.trim();
   const password = accountPasswordInput.value;
-  const passwordConfirm = accountPasswordConfirmInput.value;
+  const confirmPassword = accountPasswordConfirmInput.value;
   const initialBalance = Number(initialBalanceInput.value);
 
   if (!name || !email || !password) {
@@ -188,7 +109,7 @@ async function handleAccountSubmit(event) {
     return;
   }
 
-  if (password !== passwordConfirm) {
+  if (password !== confirmPassword) {
     alert('As senhas não coincidem.');
     return;
   }
@@ -196,9 +117,7 @@ async function handleAccountSubmit(event) {
   try {
     const response = await fetch(`${API_URL}/api/register`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name,
         email,
@@ -221,19 +140,15 @@ async function handleAccountSubmit(event) {
     };
 
     saveAccount();
-    renderAccountInfo();
-    renderSummary();
-    renderTransactions();
-
+    alert('Conta criada com sucesso!');
     accountForm.reset();
 
-    alert('Conta criada com sucesso!');
   } catch (error) {
-    console.error(error);
     alert('Erro ao conectar com servidor.');
   }
 }
 
+// ADICIONAR
 function addTransaction(event) {
   event.preventDefault();
 
@@ -243,7 +158,7 @@ function addTransaction(event) {
   const type = document.querySelector('input[name="type"]:checked').value;
 
   if (!description || amount <= 0) {
-    alert('Preencha os campos corretamente.');
+    alert('Preencha corretamente.');
     return;
   }
 
@@ -256,11 +171,10 @@ function addTransaction(event) {
 
   saveTransactions();
   renderTransactions();
-  renderSummary();
-
   form.reset();
 }
 
+// ABRIR MODAL BONITO
 function editTransaction(index) {
   const transaction = transactions[index];
   if (!transaction) return;
@@ -278,12 +192,14 @@ function editTransaction(index) {
   editBalloon.classList.remove('hidden');
 }
 
-function closeEditBalloon() {
+// FECHAR MODAL
+function closeEditModal() {
   editBalloon.classList.add('hidden');
   editTransactionForm.reset();
   editIndex = null;
 }
 
+// SALVAR EDIÇÃO
 function saveEditedTransaction(event) {
   event.preventDefault();
 
@@ -292,12 +208,9 @@ function saveEditedTransaction(event) {
   const description = editDescriptionInput.value.trim();
   const amount = Number(editAmountInput.value);
   const category = editCategoryInput.value;
-  const type = document.querySelector('input[name="edit-type"]:checked')?.value;
-
-  if (!description || amount <= 0) {
-    alert('Preencha corretamente.');
-    return;
-  }
+  const type = document.querySelector(
+    'input[name="edit-type"]:checked'
+  )?.value;
 
   transactions[editIndex] = {
     ...transactions[editIndex],
@@ -309,31 +222,26 @@ function saveEditedTransaction(event) {
 
   saveTransactions();
   renderTransactions();
-  renderSummary();
-
-  closeEditBalloon();
+  closeEditModal();
 }
 
+// REMOVER
 function removeTransaction(index) {
   transactions.splice(index, 1);
-
   saveTransactions();
   renderTransactions();
-  renderSummary();
 }
 
+// LIMPAR
 function clearAllTransactions() {
-  const confirmClear = confirm('Deseja apagar todas as movimentações?');
-
-  if (!confirmClear) return;
+  if (!confirm('Deseja apagar tudo?')) return;
 
   transactions = [];
-
   saveTransactions();
   renderTransactions();
-  renderSummary();
 }
 
+// EVENTOS
 if (accountForm) {
   accountForm.addEventListener('submit', handleAccountSubmit);
 }
@@ -364,7 +272,6 @@ if (transactionList) {
 
     if (action === 'edit') {
       editTransaction(index);
-      return;
     }
 
     if (action === 'delete') {
@@ -378,13 +285,11 @@ if (editTransactionForm) {
 }
 
 if (closeEditBalloonButton) {
-  closeEditBalloonButton.addEventListener('click', closeEditBalloon);
+  closeEditBalloonButton.addEventListener('click', closeEditModal);
 }
 
 if (cancelEditBalloonButton) {
-  cancelEditBalloonButton.addEventListener('click', closeEditBalloon);
+  cancelEditBalloonButton.addEventListener('click', closeEditModal);
 }
 
-renderAccountInfo();
 renderTransactions();
-renderSummary();
