@@ -156,6 +156,15 @@ function showAccountNameEdit() {
   editAccountNameButton.classList.add('hidden');
 }
 
+function initializeDateInputs() {
+  if (dateInput) {
+    dateInput.value = getTodayDate();
+  }
+  if (editDateInput) {
+    editDateInput.value = getTodayDate();
+  }
+}
+
 function hideAccountNameEdit() {
   editAccountNameForm.classList.add('hidden');
   editAccountNameButton.classList.remove('hidden');
@@ -184,7 +193,7 @@ function renderTransactions() {
   if (!transactions.length) {
     transactionList.innerHTML = `
       <tr>
-        <td colspan="5">Nenhuma movimentação registrada.</td>
+        <td colspan="6">Nenhuma movimentação registrada.</td>
       </tr>
     `;
     return;
@@ -252,6 +261,7 @@ function saveBalanceEdit(event) {
   const adjustmentTransaction = {
     description: 'Ajuste de saldo',
     amount: Math.abs(diff),
+    date: getTodayDate(),
     category: 'Outros',
     type: diff > 0 ? 'income' : 'expense'
   };
@@ -516,3 +526,4 @@ cancelBalanceEditButton?.addEventListener('click', hideBalanceEdit);
 renderAccountInfo();
 renderTransactions();
 renderSummary();
+initializeDateInputs();
