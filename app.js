@@ -25,6 +25,10 @@ const incomeSummaryDisplay = document.getElementById('income-summary');
 const expenseSummaryDisplay = document.getElementById('expense-summary');
 const balanceDisplay = document.getElementById('balance');
 const savingsDisplay = document.getElementById('savings');
+const editBalanceButton = document.getElementById('edit-balance-button');
+const balanceForm = document.getElementById('balance-form');
+const balanceInput = document.getElementById('balance-input');
+const cancelBalanceEditButton = document.getElementById('cancel-balance-edit');
 
 const passwordToggles = document.querySelectorAll('.password-toggle');
 
@@ -159,6 +163,42 @@ function renderTransactions() {
 
     transactionList.appendChild(row);
   });
+}
+
+function getNetTransactions() {
+  return transactions.reduce((total, transaction) => {
+    return total + (transaction.type === 'income' ? transaction.amount : -transaction.amount);
+  }, 0);
+}
+
+function showBalanceEdit() {
+  balanceInput.value = calculateSummary().balance.toFixed(2);
+  balanceForm.classList.remove('hidden');
+  editBalanceButton.classList.add('hidden');
+}
+
+function hideBalanceEdit() {
+  balanceForm.classList.add('hidden');
+  editBalanceButton.classList.remove('hidden');
+}
+
+function saveBalanceEdit(event) {
+  event.preventDefault();
+
+  if (!account) return;
+
+  const newBalance = Number(balanceInput.value);
+
+  if (Number.isNaN(newBalance)) {
+    alert('Informe um valor válido para o saldo.');
+    return;
+  }
+
+  account.initialBalance = newBalance - getNetTransactions();
+  saveAccount();
+  renderAccountInfo();
+  renderSummary();
+  hideBalanceEdit();
 }
 
 function togglePasswordVisibility(button) {
@@ -380,6 +420,10 @@ transactionList?.addEventListener('click', (event) => {
 editTransactionForm?.addEventListener('submit', saveEditedTransaction);
 closeEditBalloonButton?.addEventListener('click', closeEditModal);
 cancelEditBalloonButton?.addEventListener('click', closeEditModal);
+
+editBalanceButton?.addEventListener('click', showBalanceEdit);
+balanceForm?.addEventListener('submit', saveBalanceEdit);
+cancelBalanceEditButton?.addEventListener('click', hideBalanceEdit);
 
 renderAccountInfo();
 renderTransactions();
