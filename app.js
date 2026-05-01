@@ -50,10 +50,6 @@ let transactions = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let account = JSON.parse(localStorage.getItem(ACCOUNT_KEY) || 'null');
 let editIndex = null;
 
-if (account && typeof account.balanceAdjustment !== 'number') {
-  account.balanceAdjustment = 0;
-}
-
 function saveTransactions() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
 }
@@ -73,10 +69,6 @@ function getInitialBalance() {
   return account ? Number(account.initialBalance) : 0;
 }
 
-function getBalanceAdjustment() {
-  return account ? Number(account.balanceAdjustment || 0) : 0;
-}
-
 function calculateSummary() {
   let income = 0;
   let expense = 0;
@@ -89,7 +81,7 @@ function calculateSummary() {
     }
   });
 
-  const balance = getInitialBalance() + income - expense + getBalanceAdjustment();
+  const balance = getInitialBalance() + income - expense;
 
   return {
     income,
@@ -228,8 +220,6 @@ function hideBalanceEdit() {
 function saveBalanceEdit(event) {
   event.preventDefault();
 
-  if (!account) return;
-
   const newBalance = Number(balanceInput.value);
 
   if (Number.isNaN(newBalance)) {
@@ -237,9 +227,24 @@ function saveBalanceEdit(event) {
     return;
   }
 
-  account.balanceAdjustment = newBalance - getInitialBalance() - getNetTransactions();
-  saveAccount();
-  renderAccountInfo();
+  const currentBalance = calculateSummary().balance;
+  const diff = newBalance - currentBalance;
+
+  if (diff === 0) {
+    hideBalanceEdit();
+    return;
+  }
+
+  const adjustmentTransaction = {
+    description: 'Ajuste de saldo',
+    amount: Math.abs(diff),
+    category: 'Outros',
+    type: diff > 0 ? 'income' : 'expense'
+  };
+
+  transactions.unshift(adjustmentTransaction);
+  saveTransactions();
+  renderTransactions();
   renderSummary();
   hideBalanceEdit();
 }
@@ -301,8 +306,7 @@ async function handleAccountSubmit(event) {
       account = {
         name,
         email,
-        initialBalance,
-        balanceAdjustment: 0
+        initialBalance
       };
 
       saveAccount();
@@ -333,8 +337,7 @@ async function handleAccountSubmit(event) {
       account = {
         name: loginResult.account.name,
         email: loginResult.account.email,
-        initialBalance: loginResult.account.initialBalance,
-        balanceAdjustment: 0
+        initialBalance: loginResult.account.initialBalance
       };
 
       saveAccount();
