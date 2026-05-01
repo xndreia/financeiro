@@ -13,9 +13,22 @@ const accountPasswordInput = document.getElementById('account-password-input');
 const accountPasswordConfirmInput = document.getElementById('account-password-confirm-input');
 const initialBalanceInput = document.getElementById('initial-balance-input');
 
+const accountInfoSection = document.getElementById('account-info');
+const accountFormWrapper = document.getElementById('account-form-wrapper');
+const appContent = document.getElementById('app-content');
+
+const accountNameDisplay = document.getElementById('account-name');
+const accountEmailDisplay = document.getElementById('account-email-display');
+const accountInitialBalanceDisplay = document.getElementById('initial-balance-display');
+
+const incomeSummaryDisplay = document.getElementById('income-summary');
+const expenseSummaryDisplay = document.getElementById('expense-summary');
+const balanceDisplay = document.getElementById('balance');
+const savingsDisplay = document.getElementById('savings');
+
 const passwordToggles = document.querySelectorAll('.password-toggle');
 
-// MODAL BONITO
+// MODAL DE EDIÇÃO BONITO
 const editBalloon = document.getElementById('edit-balloon');
 const editTransactionForm = document.getElementById('edit-transaction-form');
 const editDescriptionInput = document.getElementById('edit-description');
@@ -42,6 +55,75 @@ function formatCurrency(value) {
     style: 'currency',
     currency: 'BRL'
   }).format(value);
+}
+
+function getInitialBalance() {
+  return account ? Number(account.initialBalance) : 0;
+}
+
+function calculateSummary() {
+  let income = 0;
+  let expense = 0;
+
+  transactions.forEach(transaction => {
+    if (transaction.type === 'income') {
+      income += transaction.amount;
+    } else {
+      expense += transaction.amount;
+    }
+  });
+
+  return {
+    income,
+    expense,
+    balance: getInitialBalance() + income - expense,
+    savings: Math.max(getInitialBalance() + income - expense, 0)
+  };
+}
+
+function renderSummary() {
+  const summary = calculateSummary();
+
+  if (incomeSummaryDisplay) {
+    incomeSummaryDisplay.textContent = formatCurrency(summary.income);
+  }
+
+  if (expenseSummaryDisplay) {
+    expenseSummaryDisplay.textContent = formatCurrency(summary.expense);
+  }
+
+  if (balanceDisplay) {
+    balanceDisplay.textContent = formatCurrency(summary.balance);
+  }
+
+  if (savingsDisplay) {
+    savingsDisplay.textContent = formatCurrency(summary.savings);
+  }
+}
+
+function renderAccountInfo() {
+  if (!account) {
+    accountInfoSection?.classList.add('hidden');
+    accountFormWrapper?.classList.remove('hidden');
+    appContent?.classList.add('hidden');
+    return;
+  }
+
+  accountInfoSection?.classList.remove('hidden');
+  accountFormWrapper?.classList.add('hidden');
+  appContent?.classList.remove('hidden');
+
+  if (accountNameDisplay) {
+    accountNameDisplay.textContent = account.name;
+  }
+
+  if (accountEmailDisplay) {
+    accountEmailDisplay.textContent = account.email;
+  }
+
+  if (accountInitialBalanceDisplay) {
+    accountInitialBalanceDisplay.textContent = formatCurrency(account.initialBalance);
+  }
 }
 
 function renderTransactions() {
@@ -79,7 +161,6 @@ function renderTransactions() {
   });
 }
 
-// MOSTRAR SENHA
 function togglePasswordVisibility(button) {
   const input = document.getElementById(button.dataset.target);
 
@@ -94,28 +175,23 @@ function togglePasswordVisibility(button) {
   }
 }
 
-// CADASTRO
+// CADASTRAR OU ENTRAR
 async function handleAccountSubmit(event) {
   event.preventDefault();
 
   const name = accountNameInput.value.trim();
-  const email = accountEmailInput.value.trim();
+  const email = accountEmailInput.value.trim().toLowerCase();
   const password = accountPasswordInput.value;
-  const confirmPassword = accountPasswordConfirmInput.value;
+  const passwordConfirm = accountPasswordConfirmInput.value;
   const initialBalance = Number(initialBalanceInput.value);
 
-  if (!name || !email || !password) {
-    alert('Preencha todos os campos.');
-    return;
-  }
-
-  if (password !== confirmPassword) {
-    alert('As senhas não coincidem.');
+  if (!email) {
+    alert('Informe seu e-mail.');
     return;
   }
 
   try {
-    const response = await fetch(`${API_URL}/api/register`, {
+    const registerResponse = await fetch(`${API_URL}/api/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -126,29 +202,61 @@ async function handleAccountSubmit(event) {
       })
     });
 
-    const result = await response.json();
+    const registerResult = await registerResponse.json();
 
-    if (!result.success) {
-      alert(result.message);
+    if (registerResult.success) {
+      account = {
+        name,
+        email,
+        initialBalance
+      };
+
+      saveAccount();
+      renderAccountInfo();
+      renderSummary();
+      renderTransactions();
+
+      accountForm.reset();
+
+      alert('Conta criada com sucesso!');
       return;
     }
 
-    account = {
-      name,
-      email,
-      initialBalance
-    };
+    if (registerResult.message === 'E-mail já cadastrado.') {
+      const loginResponse = await fetch(
+        `${API_URL}/api/account?email=${encodeURIComponent(email)}`
+      );
 
-    saveAccount();
-    alert('Conta criada com sucesso!');
-    accountForm.reset();
+      const loginResult = await loginResponse.json();
+
+      if (!loginResult.success) {
+        alert('Erro ao entrar.');
+        return;
+      }
+
+      account = {
+        name: loginResult.account.name,
+        email: loginResult.account.email,
+        initialBalance: loginResult.account.initialBalance
+      };
+
+      saveAccount();
+      renderAccountInfo();
+      renderSummary();
+      renderTransactions();
+
+      accountForm.reset();
+
+      alert('Login realizado com sucesso!');
+      return;
+    }
 
   } catch (error) {
+    console.error(error);
     alert('Erro ao conectar com servidor.');
   }
 }
 
-// ADICIONAR
 function addTransaction(event) {
   event.preventDefault();
 
@@ -171,10 +279,12 @@ function addTransaction(event) {
 
   saveTransactions();
   renderTransactions();
+  renderSummary();
+
   form.reset();
 }
 
-// ABRIR MODAL BONITO
+// MODAL BONITO
 function editTransaction(index) {
   const transaction = transactions[index];
   if (!transaction) return;
@@ -185,21 +295,19 @@ function editTransaction(index) {
   editAmountInput.value = transaction.amount;
   editCategoryInput.value = transaction.category;
 
-  editTypeInputs.forEach((input) => {
+  editTypeInputs.forEach(input => {
     input.checked = input.value === transaction.type;
   });
 
   editBalloon.classList.remove('hidden');
 }
 
-// FECHAR MODAL
 function closeEditModal() {
   editBalloon.classList.add('hidden');
   editTransactionForm.reset();
   editIndex = null;
 }
 
-// SALVAR EDIÇÃO
 function saveEditedTransaction(event) {
   event.preventDefault();
 
@@ -222,74 +330,57 @@ function saveEditedTransaction(event) {
 
   saveTransactions();
   renderTransactions();
+  renderSummary();
   closeEditModal();
 }
 
-// REMOVER
 function removeTransaction(index) {
   transactions.splice(index, 1);
   saveTransactions();
   renderTransactions();
+  renderSummary();
 }
 
-// LIMPAR
 function clearAllTransactions() {
   if (!confirm('Deseja apagar tudo?')) return;
 
   transactions = [];
   saveTransactions();
   renderTransactions();
+  renderSummary();
 }
 
 // EVENTOS
-if (accountForm) {
-  accountForm.addEventListener('submit', handleAccountSubmit);
-}
+accountForm?.addEventListener('submit', handleAccountSubmit);
+form?.addEventListener('submit', addTransaction);
+clearAllButton?.addEventListener('click', clearAllTransactions);
 
-if (form) {
-  form.addEventListener('submit', addTransaction);
-}
-
-if (clearAllButton) {
-  clearAllButton.addEventListener('click', clearAllTransactions);
-}
-
-if (passwordToggles.length) {
-  passwordToggles.forEach((button) => {
-    button.addEventListener('click', () => {
-      togglePasswordVisibility(button);
-    });
+passwordToggles.forEach(button => {
+  button.addEventListener('click', () => {
+    togglePasswordVisibility(button);
   });
-}
+});
 
-if (transactionList) {
-  transactionList.addEventListener('click', (event) => {
-    const button = event.target.closest('button[data-action]');
-    if (!button) return;
+transactionList?.addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-action]');
+  if (!button) return;
 
-    const index = Number(button.dataset.index);
-    const action = button.dataset.action;
+  const index = Number(button.dataset.index);
+  const action = button.dataset.action;
 
-    if (action === 'edit') {
-      editTransaction(index);
-    }
+  if (action === 'edit') {
+    editTransaction(index);
+  }
 
-    if (action === 'delete') {
-      removeTransaction(index);
-    }
-  });
-}
+  if (action === 'delete') {
+    removeTransaction(index);
+  }
+});
 
-if (editTransactionForm) {
-  editTransactionForm.addEventListener('submit', saveEditedTransaction);
-}
+editTransactionForm?.addEventListener('submit', saveEditedTransaction);
+closeEditBalloonButton?.addEventListener('click', closeEditModal);
+cancelEditBalloonButton?.addEventListener('click', closeEditModal);
 
-if (closeEditBalloonButton) {
-  closeEditBalloonButton.addEventListener('click', closeEditModal);
-}
-
-if (cancelEditBalloonButton) {
-  cancelEditBalloonButton.addEventListener('click', closeEditModal);
-}
-
+renderAccountInfo();
 renderTransactions();
+renderSummary();
