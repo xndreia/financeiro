@@ -157,9 +157,7 @@ function showAccountNameEdit() {
 }
 
 function initializeDateInputs() {
-  if (dateInput) {
-    dateInput.value = getTodayDate();
-  }
+  // Deixa o campo de data vazio para que o usuário preencha manualmente.
   if (editDateInput) {
     editDateInput.value = getTodayDate();
   }
@@ -389,7 +387,7 @@ function addTransaction(event) {
   const description = document.getElementById('description').value.trim();
   const amount = Number(document.getElementById('amount').value);
   const category = document.getElementById('category').value;
-  const date = dateInput?.value || getTodayDate();
+  const date = dateInput?.value;
   const type = document.querySelector('input[name="type"]:checked').value;
 
   if (!description || amount <= 0 || !date) {
@@ -410,9 +408,6 @@ function addTransaction(event) {
   renderSummary();
 
   form.reset();
-  if (dateInput) {
-    dateInput.value = getTodayDate();
-  }
 }
 
 // MODAL BONITO
